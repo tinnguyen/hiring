@@ -1,0 +1,14 @@
+development:
+  single_acc: true
+  single_acc_id: 
+  tld_length: 1
+  
+test:
+  single_acc: true
+  single_acc_id: 1
+  tld_length: 1
+
+production:
+  single_acc: true
+  single_acc_id: 1
+  tld_length: 2

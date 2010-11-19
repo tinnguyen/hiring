@@ -1,0 +1,62 @@
+- content_for :head do
+  = javascript_include_tag 'autoHeight'
+= content_for :heading do
+  %h1 Message
+    
+.field
+  %span{:style => 'font-weight: bold'} From: 
+  %span= @message.sender_email
+.field
+  %span{:style => 'font-weight: bold'} Subject:
+  %span= @message.subject
+- if @message.has_attachments?
+  .field
+    %span{:style => 'font-weight: bold'} Attachments:  
+    - @message.attachments.each do |a|
+      %span= link_to a.attachment_file_name, a.attachment.url 
+.field.clearfix
+  %iframe.viewer.autoHeight{:src => content_message_url(@message)}
+    %p Cannot view the email content on this browser
+
+- if !@message.converted
+  %div
+    = link_to 'Convert to application from this message', '#', :id => 'tog'
+    %span#arrow
+      = image_tag("arrow_#{@applicant.errors.any? ? 'down' : 'right'}.png")
+  %br  
+  #convert_form{:style => "display: #{@applicant.errors.any? ? 'block' : 'none'}"}
+    - semantic_form_for @applicant, :url => {:controller => 'messages', :action => 'create'}, :html => {:id => 'form'} do |f|
+      = f.hidden_field :message_id
+      - f.inputs do
+        = f.input :message_id, :as => :hidden        
+        = f.input :job_id, :as => :select, :collection => current_account.jobs.map { |job| [job.title, job.id] }
+        = f.input :first_name, :label => 'First Name'
+        = f.input :last_name, :label => 'Last Name'
+        = f.input :email, :label => 'Email'
+        = f.input :phone, :label => 'Phone'
+        - options = [['Use message content as Cover Letter', '1'],['Use message content as Resume', '2']]
+        = f.input :action, :as => :radio, :wrapper_html => {:class => 'articles'}, :collection => options
+      - f.buttons do
+        = f.commit_button "Submit"
+- else
+  %div
+    - if @message.converter_id.blank?
+      ** This message has been auto converted to #{link_to 'this', applicant_path(:id => @message.applicant_id)} | 
+      application.
+    - else
+      ** This message has been converted to #{link_to 'this', applicant_path(:id => @message.applicant_id)} | 
+      application by <b>#{@message.converter.email}</b>
+:erb
+  <script type="text/javascript">
+  $(function(){
+    $('#tog').toggle(function() {
+      $('#convert_form').slideDown();
+      $('#arrow').html('<%= image_tag("arrow_down.png") %>');
+    }, function() {
+      $('#convert_form').slideUp();
+      $('#arrow').html('<%= image_tag("arrow_right.png") %>');
+    });
+    $('#applicant_action_1').attr('checked', true);
+    $("input:submit").button();
+  });
+  </script>

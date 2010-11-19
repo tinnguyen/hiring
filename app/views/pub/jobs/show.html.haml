@@ -1,0 +1,31 @@
+%h1= @job.title
+
+%table.details
+  %tr
+    %td
+    %td
+  %tr
+    %th Status
+    %td
+      %span{:style => !@job.open? ? "color: red" : ""}
+        = @job.status
+  %tr
+    %th Posted on
+    %td= @job.creation_date.to_formatted_s(:long)
+    %tr
+      %th Closed on
+      %td= @job.expiry_date.to_formatted_s(:long) if @job.expiry_date
+
+!= @job.description
+
+- if @job.open?
+  %p= link_to 'Apply for this position', new_pub_job_applicant_path(@job), :id => "Apply"
+- else
+  %br/
+
+%p= link_to 'Back to Job board', pub_jobs_path
+
+:javascript
+  $(function() {
+  	$("#Apply").button().css({"width": "20em", "display": "block", "margin": "0 auto 30px auto"})
+  })

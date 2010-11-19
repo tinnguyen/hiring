@@ -1,0 +1,100 @@
+= content_for :head do
+  = stylesheet_link_tag "colorPicker.css"
+  = javascript_include_tag "jquery.colorPicker.js"
+
+= content_for :heading do
+  %h1 Status of applications
+
+%ul{:id => 'sortable'}
+  = render :partial => 'stages'
+
+%button{:id => 'new_stage_button'}
+  New job stage
+#new_stage_form
+  Add a new Stage
+  = form_for([:config, @job_stage], :remote => true) do |f|
+    = f.text_field :name
+    = submit_tag 'Add'
+    or 
+    %span.pseudo_link.cancel_new
+      Cancel
+
+
+:erb
+  <script type='text/javascript'>
+    $(document).ready(function() {
+    
+      $("#new_stage_button").button();
+      
+      $('.update_form, #new_stage_form').hide();
+      
+      $('.edit_job_stage').bind("ajax:loading", function(){ $(this).parent().siblings('.progress').show();}).bind("ajax:complete", function(){$(this).parent().siblings('.progress').hide();});
+      
+      $('.pseudo_link, .col12').hover(function(){ 
+        $(this).css('cursor', 'pointer');
+      });
+      
+      $('.cancel_update').click(function(){
+        var form = $(this).parent().parent();
+        form.hide();
+        form.siblings('.editable').show();
+      });
+      
+      $('#new_stage_button').click(function(){
+        $('#new_job_stage > #job_stage_name').val('');
+        $('#new_stage_form').show(); 
+        $('#new_job_stage > #job_stage_name').focus();
+        $(this).hide();
+      });
+      
+      $('#sortable').sortable({
+        items: 'li',
+        cursor: 'move',
+        update: function(e, data) {
+          var order = $('#sortable').sortable('serialize');
+          $.ajax({
+            type: 'PUT',
+            url: '/config/job_stages/1',
+            data: order
+          });
+        }
+      });
+      
+      $('.color').colorPicker();
+      
+      $('.color').change(function(e, data){
+        var stage_id = $(this).attr('id').slice(5);
+        
+        $.ajax({
+          type: 'PUT',
+          url: '/config/job_stages/' + stage_id,
+          data: {
+            'job_stage[color]' : $(this).val(),
+          }
+        });
+      });
+      
+      $('.col12 > img').click(function(){
+        var stage = $(this).parent().parent().children(":first-child"); 
+        var editable = stage.children(".editable");
+        var update_form = stage.children(".update_form");
+        var will_be_removed = update_form.children().children('.field_with_errors');
+        
+        editable.hide();
+        
+        if (will_be_removed) {
+          will_be_removed.replaceWith(will_be_removed.contents());
+        }
+        update_form.children().children('#job_stage_name').val(editable.text().trim());
+        update_form.show();
+      });
+            
+      $('.cancel_new').click(function(){
+        var will_be_removed = $(this).siblings('.field_with_errors')
+
+        $('#new_stage_form').hide(); 
+        $('#new_stage_button').show(); 
+        will_be_removed.replaceWith(will_be_removed.contents());        
+      });
+    })
+  </script>

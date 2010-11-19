@@ -1,0 +1,129 @@
+= content_for :heading do
+  %h1 Applications
+  .right
+    = link_to 'Create a new Application', new_applicant_path, :id => "new_applicant"
+
+%ul.buttons-nav
+  %li#button-archive
+    Archive
+  %li#button-delete
+    Delete
+
+%ul.selectors-nav
+  %li="Select:"
+  %li
+    &nbsp;
+  %li{:class => "selector", :id => "all-selector"}
+    All
+  %li=","
+  %li
+    &nbsp;
+  %li{:class => "selector", :id => "none-selector"}
+    None
+  %li=","
+  %li
+    &nbsp;
+  %li{:class => "selector"}
+    Read
+  %li=","
+  %li
+    &nbsp;
+  %li{:class => "selector"}
+    Unread
+  %li=","
+  %li
+    &nbsp;
+  %li{:class => "selector", :id => "starred-selector"}
+    Starred
+  %li=","
+  %li
+    &nbsp;
+  %li{:class => "selector", :id => "unstarred-selector"}
+    Unstarred
+
+- form_tag(batch_process_applicants_url) do 
+  %table.applicants
+    %tr.title
+      %th 
+      %th
+      %th Name
+      %th Applied for
+      %th Status
+    - @applicants.each do |applicant|
+      %tr{:class => (@read_status[applicant.id] ? "read" : "unread") + (applicant.is_starred ? " starred" : " unstarred"), :id => "#{applicant.id}"}
+        %td.checkbox
+          = check_box_tag "selection[]", applicant.id
+        %td{:class => "star"}
+          - if applicant.is_starred
+            %img{:src => "/images/yellow-star.png", :class => "yellow-star star-icon"}
+            %img{:src => "/images/white-star.png", :class => "white-star star-icon", :style => "display:none"}
+          - else
+            %img{:src => "/images/yellow-star.png", :class => "yellow-star star-icon", :style => "display:none"}
+            %img{:src => "/images/white-star.png", :class => "white-star star-icon"}
+        %td.name
+          = link_to applicant.first_name + " " + applicant.last_name, applicant_path(applicant)
+        %td= applicant.job.title
+        %td
+          %div{:style => "background: #{applicant.job_stage.color}; color:#{map_to_char_color(applicant.job_stage.color)}", :class => "statusbox"}
+            = applicant.job_stage.name
+  = submit_tag "Archive", :id => "archive-submit", :style => "display:none"
+  = submit_tag "Delete", :id => "delete-submit", :style => "display:none"
+
+- content_for :sidebar do
+  %h2 Filters
+  %ul
+    = form_tag(applicants_path, :method => :get, :id => 'job_filter') do
+      %li
+        %span= "Position"
+        = select_tag :job_title, options_for_select(job_filter_collection, @job)
+      %li
+        %span= "Status"
+        = select_tag :apt_status, options_for_select(apt_status_filter_collection, @status)
+
+:javascript
+  $(function() {
+  	$("a#new_applicant").button()
+  	$("ul.buttons-nav li").button()
+  	
+  	$('#job_title, #apt_status').change(function() {
+  		$('#job_filter').submit();
+  	});
+  	
+  	$('img.star-icon').mouseover(function(){
+  	  $(this).css("cursor", "pointer");
+  	});
+  	
+  	$('.star-icon').click(function(){
+  		$.ajax({
+  			type: 'PUT',
+  			url: '/applicants/' + $(this).parent().parent().attr('id'),
+  			data: { 'starring' : 1 }
+  		});
+  	});
+  	
+  	$('#all-selector').click(function(){
+  	  $('table.applicants :checkbox').attr('checked', true);
+  	});
+
+  	$('#none-selector').click(function(){
+  	  $('table.applicants :checkbox').attr('checked', false);
+  	});
+
+  	$('#starred-selector').click(function(){
+  	  $('.starred').children('.checkbox').children(':input').attr('checked', true);
+  	  $('.unstarred').children('.checkbox').children(':input').attr('checked', false);
+  	});
+
+  	$('#unstarred-selector').click(function(){
+  	  $('.starred').children('.checkbox').children(':input').attr('checked', false);
+  	  $('.unstarred').children('.checkbox').children(':input').attr('checked', true);
+  	});  	
+  	
+  	$('#button-delete').click(function(){
+      $('#delete-submit').click();
+  	});
+  	
+  	$('#button-archive').click(function(){
+      $('#archive-submit').click();
+  	});
+  })  

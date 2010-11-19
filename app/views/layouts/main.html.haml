@@ -1,0 +1,47 @@
+!!! XML
+!!!
+%html
+  %head
+    %title Hiring application
+    = stylesheet_link_tag "jquery-ui-1.8.2.custom.css", "simple.css"
+    = formtastic_stylesheet_link_tag
+    / %script{ :type => "text/javascript", :src => "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" }
+    / %script{ :type => "text/javascript", :src => "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js" }
+    = javascript_include_tag 'jquery.min.js', 'jquery-ui-1.8.2.custom.min.js', 'rails.js'
+    = javascript_include_tag :ckeditor
+    = csrf_meta_tag
+    = yield :head
+  %body
+    #header
+      .links.clearfix
+        .right
+          - if admin_signed_in?
+            = current_admin.email
+            |
+            = link_to "Sign out", destroy_admin_session_path
+          - else
+            = link_to "Sign in", new_admin_session_path
+      %h1#title HiRing
+      .tabs.clearfix
+        %ol.left
+          %li= link_to "Create an account", new_main_account_path
+          - if admin_signed_in?
+            %li= link_to "Accounts management", main_accounts_path
+    #container.clearfix
+      #content
+        - if notice || alert
+          #flashes
+            %p#notice= notice
+            %p#alert= alert
+        = yield
+    #footer
+      Copyright 2010. Powered by
+      :erb
+        <a href=<%= root_url(:subdomain => false) %>>HiringApp</a>.
+
+:erb
+  <script>
+  $(function() {
+  	$("<%= @current_tab %>").addClass("current")
+  })
+  </script>

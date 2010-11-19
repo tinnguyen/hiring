@@ -1,0 +1,16 @@
+%h1
+  Your account information
+
+%table.details{:style => "width: 100%"}
+  %tr
+    %th Name
+    %td= @account.name
+  %tr
+    %th Onwer's email
+    %td= @account.owner.email
+  %tr
+    %th Dashboard
+    %td= link_to dashboard_url(:subdomain => @account.subdomain), dashboard_url(:subdomain => @account.subdomain)
+  %tr
+    %th Public job board
+    %td= link_to pub_jobs_url(:subdomain => @account.subdomain), pub_jobs_url(:subdomain => @account.subdomain)

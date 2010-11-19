@@ -1,0 +1,16 @@
+.conversation.clearfix
+  .icon
+    - if conversation.outgoing
+      = image_tag('send.png')
+    - else
+      = image_tag('reply.png')
+  .msg  
+    %p
+      - if conversation.outgoing
+        To: &lt;#{conversation.applicant.display_name}&gt; #{conversation.applicant.email}
+      - else
+        To: &lt;#{conversation.applicant.display_name}&gt; #{conversation.applicant.email}
+    %p
+      Subject:
+      = (conversation.subject && !conversation.subject.blank?) ? conversation.subject : "<none>"
+    %p= simple_format(conversation.body)

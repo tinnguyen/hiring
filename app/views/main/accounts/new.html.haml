@@ -1,0 +1,19 @@
+%h1 Create an account
+= semantic_form_for([:main, @account]) do |f|
+  = f.inputs do
+    = show_simple_captcha
+    = f.input :name, :label => "Company Name", :required => true
+    = f.input :subdomain, :label => "Subdomain", :required => true
+    = f.semantic_fields_for :owner do |o|
+      = o.input :email, :label => "Email", :required => true
+      = o.input :password, :as => :password, :label => "Password", :required => true
+      = o.input :password_confirmation, :as => :password, :label => "Password Confirmation", :required => true
+    = show_simple_captcha :label => "Are you human? Type the text from the image."
+      
+  = f.buttons do
+    = f.commit_button 'Submit'
+
+:javascript
+  $(function() {
+  	$("input[type=submit]").button()
+  })

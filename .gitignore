@@ -1,0 +1,9 @@
+.bundle
+.project
+db/*.sqlite3
+log/*.log
+tmp/**/*
+*.swp
+tmp/*
+public/assets/**
+

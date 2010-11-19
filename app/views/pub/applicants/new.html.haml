@@ -1,0 +1,20 @@
+%h1= "Apply for a \"#{@applicant.job.title}\" position"
+
+- semantic_form_for [:pub, :job, @applicant], :html => {:multipart => true} do |f|
+  - f.inputs do
+    = f.input :first_name, :label => "First name"
+    = f.input :last_name, :label => "Last name"
+    = f.input :email, :label => "Email"
+    = f.input :phone, :label => "Phone"
+    = f.input :cover_letter, :label => "Cover letter", :input_html => {:rows => 15}
+    = f.input :attachment, :as => :file, :label => "Attachment"
+  
+  - f.buttons do
+    = f.commit_button 'Submit'
+
+= link_to 'Back to Job description', pub_job_path(@applicant.job)
+
+:javascript
+  $(function() {
+  	$("input[type=submit]").button()
+  })

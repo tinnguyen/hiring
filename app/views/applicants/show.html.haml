@@ -1,0 +1,224 @@
+- content_for :head do
+  = javascript_include_tag 'autoHeight', 'jquery.form'
+= content_for :heading do
+  %h1= @applicant.first_name + " " + @applicant.last_name
+
+%table.details
+  %tr
+    %th
+    %th
+  %tr
+    %th Position
+    %td= @applicant.job.title
+  %tr
+    %th Email
+    %td= @applicant.email
+  %tr
+    %th Phone
+    %td= @applicant.phone
+  %tr
+    %th Resume
+    - if @applicant.attachment?
+      %td= link_to @applicant.attachment_file_name, @applicant.attachment.url
+    - else
+      %td No resume attached
+  %tr
+    %td
+      %strong Status
+    %td{:style => "background: #{@applicant.job_stage.color}; color:#{map_to_char_color(@applicant.job_stage.color)}"}= @applicant.job_stage.name
+
+%ul.actions
+  %li= link_to 'Edit details', edit_applicant_path(@applicant)
+  %li= link_to 'Mark as unread', mark_applicant_as_unread_path(@applicant)
+
+<div id=jstabs>
+%ul
+  %li= link_to "Activities", "#activities"
+  %li= link_to "Attachments", "#attachments"
+  %li= link_to "Resume", "#resume"
+  %li= link_to "Conversation", "#conversation"
+
+<div id=activities class=jstab>
+%table.activities
+  - @activities.each_with_index do |activity, i|
+    %tr
+      %td
+        = image_tag "no-picture.png"
+      %td
+        .meta
+          .actor= activity.actor.email
+          .time= humanize_time(activity.created_at)
+        - if activity.action
+          .action
+            .ui-icon.ui-icon-info
+            %span.action= activity.action
+            - if activity.action == 'attached'
+              - a = Attachment.find(activity.subject_id)
+              %span.attachment
+                - if a.caption.empty?
+                  = link_to a.attachment_file_name, a.attachment.url
+                - else
+                  = link_to a.caption + ' (' + a.attachment_file_name + ')', a.attachment.url
+        - else
+          %p.comment= activity.comment
+          - if activity.next_stage
+            .action
+              .ui-icon.ui-icon-info
+              changed status
+              %div{:style => "background: #{activity.prev_stage.color}; color:#{map_to_char_color(activity.prev_stage.color)}", :class => "statusbox"}
+                = activity.prev_stage.name
+              →
+              %div{:style => "background: #{activity.next_stage.color}; color:#{map_to_char_color(activity.next_stage.color)}", :class => "statusbox"}
+                = activity.next_stage.name
+
+= form_for @activity, :url => applicant_activities_path(@applicant), :html => { :class => "clearfix" } do |f|
+  %table
+    %tr
+      %td
+        = f.label :comment, "Comment"
+        = f.text_area :comment, :rows => 10, :cols => 52
+      %td
+        = f.label :next_stage, "Status"
+        %ol
+          - current_account.job_stages.undeleted.each do |stage|
+            %li
+              = f.radio_button :next_stage, stage.id, :checked => @applicant.job_stage.id == stage.id
+              %div{:style => "background: #{stage.color}; color:#{map_to_char_color(stage.color)}", :class => "statusbox"}
+                = stage.name
+        = f.submit "Submit"
+</div><!--#activities-->
+
+<div id=attachments class=jstab>
+- unless @applicant.attachments.blank?
+  %h3 Listing attachments
+  %ul.attachments
+    - @applicant.attachments.each do |a|
+      %li
+        - if a.caption.blank?
+          = link_to a.attachment_file_name, a.attachment.url
+        - else
+          = link_to a.caption + ' (' + a.attachment_file_name + ')', a.attachment.url
+
+%h3 New attachment
+= form_for [@applicant, Attachment.new], :url => applicant_attachments_path(@applicant), :html => {:multipart => true} do |f|          
+  %table{:class => "attachments"}
+    %tr
+      %td
+        = f.label "Caption"
+      %td
+        = f.text_field :caption
+    %tr
+      %td
+        = f.label "Attachment"
+      %td
+        = f.file_field :attachment, :as => :file
+    %tr
+      %td
+      %td
+        = f.submit "Attach"              
+</div><!--#attachments-->
+
+<div id=resume class=jstab>
+- if !@applicant.cover_letter.blank?
+  = link_to 'Cover Letter', '#', :id => 'cover_letter'
+  %span#arrow
+    = image_tag("arrow_right.png")
+  %iframe#cl.viewer.autoHeight{:style => 'display:none;'}
+    %p Cannot view cover letter on this browser
+
+- if !@applicant.resume.blank?
+  %h4{:style => 'margin-top:10px;'} Resume
+  %iframe#rs.viewer.autoHeight
+    %p Cannot view resume on this browser
+</div><!--#resume-->
+
+<div id=conversation class=jstab>
+- if @applicant.job.has_email_setting?
+  #conversations
+    = render :partial => 'conversations/conversation', :collection => @conversations
+
+  %h2{:style=>"margin-top:20px"}
+    Send an e-mail to #{@applicant.display_name.inspect} #{@applicant.email}
+  
+  = semantic_form_for @conversation, :url => conversations_path, :html => {:id => 'frm-msg', :multipart => true} do |f|
+    = f.inputs do
+      %li
+        = label :template, "Use a predefined template"
+        = select_tag :template, options_for_select([["--Select--", 0]] + @templates.map{ |k, v| [v[:subject], k] }), :style => "width: 75%"
+      = f.input :applicant_id, :as => :hidden
+      = f.input :subject, :input_html => { :size => 75 }
+      = f.input :body, :id => :body, :label => 'Message body'
+      = f.input :attachment, :as => :file
+    = f.buttons do
+      = f.commit_button 'Send', :id => 'send'
+      = image_tag('loading.gif', :style => 'display:none; padding: 10px', :id => 'loading')
+</div><!--#conversation-->
+     
+</div> <!--#jstabs-->
+
+:erb
+  <script type="text/javascript">
+  
+  var Templates = <%= @templates.to_json %>;
+  
+  $(function() {
+    clreload = false;
+    rsreload = false;    
+    	$("#jstabs").tabs({
+    	  select: function(event, ui) {
+    	    if (ui.index == 2) {  
+    	      if (<%= !@applicant.resume.blank?	%> && !rsreload) {
+    	        $("#rs").attr('src', '<%= resume_applicant_url(@message) %>');
+    	        rsreload = true;
+    	      }
+    	    }
+    	  }
+    	})
+    	$("ul.actions a").button();
+    	$('#add_attachment').hide();
+    	$("input[type=submit]").button();
+    	if (<%= !@applicant.cover_letter.blank?	%>) {
+      	$('#cover_letter').toggle(function() {
+      	  if (!clreload) {
+      	    $('#cl').attr('src', '<%= cover_letter_applicant_url(@message) %>');
+        	  clreload = true;
+        	}
+          $('#cl').slideDown();
+          $('#arrow').html('<%= image_tag("arrow_down.png") %>');
+        }, function() {
+          $('#cl').slideUp();
+          $('#arrow').html('<%= image_tag("arrow_right.png") %>');
+        });
+      }
+    	$("input[type=submit]").button();
+      if (<%= @applicant.job.has_email_setting? %>) {
+        $("#frm-msg").submit(function() {
+          $("#loading").show();
+          $(this).ajaxSubmit({            
+            success: function(resp) {
+      	      $("#conversations").append($(resp).hide().fadeIn(2000));
+      	      $("#conversation_subject").val('');
+      	      $("#conversation_body").val('');
+      	      $("#loading").hide();
+      	    },
+      	    clearForm: true,
+      	    resetForm: true  
+          });
+          return false;
+        });
+    	}
+  
+  	$("#template").change(function() {
+  		var i = $(this).val()
+  		if (i in Templates) {
+  			$("#conversation_subject").val(Templates[i].subject)
+  			$("#conversation_body").val(Templates[i].body)
+  		}
+  	})
+  	
+  	$("#jstabs > ul > li > a").click(function() {
+  		window.location.hash = this.hash
+  		$("#jstabs")[0].scrollIntoView()
+  	})
+  })
+  </script>

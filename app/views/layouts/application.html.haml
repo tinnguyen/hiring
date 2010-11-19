@@ -1,0 +1,68 @@
+!!! XML
+!!!
+%html
+  %head
+    %title Hiring application
+    = stylesheet_link_tag "jquery-ui-1.8.2.custom.css", "style.css"
+    = formtastic_stylesheet_link_tag
+    / %script{ :type => "text/javascript", :src => "http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" }
+    / %script{ :type => "text/javascript", :src => "http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js" }
+    = javascript_include_tag 'jquery.min.js', 'jquery-ui-1.8.2.custom.min.js', 'rails.js'
+    = javascript_include_tag :ckeditor
+    = csrf_meta_tag
+    = yield :head
+  %body
+    #header
+      .links.clearfix
+        .right
+          - if user_signed_in?
+            = current_user.email
+            |
+            = link_to "Sign out", destroy_user_session_path
+          - else
+            = link_to "Sign in", new_user_session_path
+      %h1#title= current_account.name
+      .tabs.clearfix
+        %ol.left                                                 
+          - if user_signed_in?
+            %li= link_to "Dashboard", dashboard_path
+            %li= link_to "Jobs", jobs_path
+            %li= link_to @n_unread_applications == 0 ? "Applications" : "Applications (#{@n_unread_applications})", applicants_path
+            %li= link_to current_user.unread_messages_count == 0 ? "Message Center" : "Message Center (#{current_user.unread_messages_count})", messages_path
+        %ol.right
+          - if user_signed_in?
+            %li= link_to "Configuration", config_admin_path
+          %li= link_to "Public jobs board", pub_jobs_path
+    %table#container
+      - if notice || alert
+        %tr
+          %td
+            #flashes
+              - if notice
+                #notice= notice
+              - if alert
+                #alert= alert
+      - if !flash[:warning].blank?
+        %tr
+          %td
+            .warning= flash[:warning].html_safe
+      %tr
+        %td#maincol
+          #heading
+            = yield :heading
+          #content
+            = yield
+        %td#sidebar
+          = yield :sidebar
+    #footer
+      Copyright 2010. Powered by
+      :erb
+        <a href=<%= root_url(:subdomain => false) %>>HiringApp</a>.
+
+:erb
+  <script>
+  $(function() {
+  	$("<%= @current_tab %>").addClass("current")
+  	$("#flashes").delay(5000).slideUp()
+  })
+  </script>

@@ -1,0 +1,20 @@
+- if @jobs.empty?
+
+  %p Thank you for your interest in our company.
+  %p Unfortunately there are currently no open positions.
+  %p Please check back later!
+
+- else
+  %h1 Current openings
+  
+  %table.lined
+    %tr
+      %th Position
+      %th Posted on
+      %th Closed on
+  
+    - @jobs.each do |job|
+      %tr
+        %td= link_to job.title, pub_job_path(job)
+        %td= job.creation_date.to_formatted_s(:long)
+        %td= job.expiry_date.to_formatted_s(:long) unless job.expiry_date.nil?
